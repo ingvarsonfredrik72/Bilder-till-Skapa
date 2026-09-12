@@ -11,14 +11,14 @@
       background-color: #121212;
       color: #e0e0e0;
       margin: 0;
-      padding: 16px;
+      padding: 16px 24px;
     }
     header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     h1 {
-      margin: 0 0 8px 0;
+      margin: 0 0 6px 0;
       font-size: 1.6rem;
     }
     p.subtitle {
@@ -27,7 +27,7 @@
       font-size: 0.95rem;
     }
 
-    /* Flytande menyfält överst */
+    /* Flytande verktygsrad */
     .toolbar {
       position: sticky;
       top: 12px;
@@ -36,27 +36,27 @@
       backdrop-filter: blur(8px);
       border: 1px solid #333;
       border-radius: 12px;
-      padding: 12px 16px;
+      padding: 12px 20px;
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      max-width: 1200px;
+      max-width: 1600px;
       margin: 0 auto 24px auto;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
     .status {
-      font-size: 0.95rem;
+      font-size: 1rem;
     }
     .count {
       color: #3b82f6;
       font-weight: 700;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
     }
     .actions {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
     }
     input[type="text"] {
@@ -80,91 +80,182 @@
       font-size: 0.9rem;
       transition: background 0.15s ease;
     }
-    .btn-primary {
-      background: #2563eb;
-      color: white;
-    }
-    .btn-primary:hover {
-      background: #1d4ed8;
-    }
-    .btn-secondary {
-      background: #374151;
-      color: #f3f4f6;
-    }
-    .btn-secondary:hover {
-      background: #4b5563;
-    }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #374151; color: #f3f4f6; }
+    .btn-secondary:hover { background: #4b5563; }
 
-    /* Galleri-layout */
+    /* Galleri: bredare grid och större förhandsvisningar */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 16px;
-      max-width: 1200px;
+      /* Minst 360px breda bilder på dator istället för 260px */
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 20px;
+      max-width: 1800px; /* Betydligt rymligare layout på stora skärmar */
       margin: 0 auto;
     }
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .card {
       position: relative;
-      background: #1e1e1e;
-      border-radius: 8px;
+      background: #1a1a1a;
+      border-radius: 10px;
       overflow: hidden;
       cursor: pointer;
       border: 3px solid transparent;
       user-select: none;
-      transition: transform 0.1s ease, border-color 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s ease, transform 0.15s ease;
     }
     .card:hover {
-      transform: translateY(-2px);
-    }
-    .card img {
-      width: 100%;
-      height: 220px;
-      object-fit: cover;
-      display: block;
-      background: #2a2a2a;
+      transform: translateY(-3px);
     }
     .card.selected {
       border-color: #3b82f6;
     }
-    .badge {
-      display: none;
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #3b82f6;
-      color: white;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      text-align: center;
-      line-height: 28px;
-      font-size: 15px;
-      font-weight: bold;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+
+    .img-wrap {
+      position: relative;
+      background: #0f0f0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
     }
-    .card.selected .badge {
+    .card img {
+      width: 100%;
+      height: auto;
+      max-height: 420px;
+      object-fit: contain; /* Bevarar hela bildens utsnitt utan beskärning */
       display: block;
     }
-    .card-footer {
-      padding: 8px;
-      font-size: 0.8rem;
-      color: #888;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+
+    /* Valmarkör i övre högra hörnet */
+    .select-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid #666;
+      color: white;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.15s ease;
     }
+    .card.selected .select-badge {
+      background: #3b82f6;
+      border-color: #3b82f6;
+    }
+
+    /* Förstoringsknapp i nedre högra hörnet på bilden */
+    .zoom-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .zoom-btn:hover {
+      background: rgba(0, 0, 0, 0.95);
+      border-color: #fff;
+    }
+
+    .card-footer {
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #999;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Ljuslåda / Fullskärmsvisning */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .lightbox.active {
+      display: flex;
+    }
+    .lightbox-img {
+      max-width: 90vw;
+      max-height: 82vh;
+      object-fit: contain;
+      border-radius: 6px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    }
+    .lightbox-toolbar {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: none;
+      font-size: 2rem;
+      padding: 12px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .lightbox-nav:hover { background: rgba(255,255,255,0.3); }
+    .lightbox-prev { left: 20px; }
+    .lightbox-next { right: 20px; }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      font-size: 2rem;
+      color: #aaa;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+    .lightbox-close:hover { color: #fff; }
   </style>
 </head>
 <body>
 
   <header>
     <h1>Välj dina favoriter</h1>
-    <p class="subtitle">Klicka på de bilder du gillar bäst och skicka in ditt urval.</p>
+    <p class="subtitle">Klicka på en bild för att välja/avmarkera. Klicka på 🔍 Förstora för att granska i helskärm.</p>
   </header>
 
   <div class="toolbar">
-    <div class="status">Valda: <span class="count" id="count">0</span> st</div>
+    <div class="status">Valda bilder: <span class="count" id="count">0</span> st</div>
     <div class="actions">
       <input type="text" id="userName" placeholder="Ditt namn..." />
       <button class="btn-secondary" onclick="copySelection()">Kopiera lista</button>
@@ -174,68 +265,150 @@
 
   <div class="grid" id="gallery"></div>
 
+  <!-- Lightbox modal -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <button class="lightbox-nav lightbox-prev" onclick="changeImage(-1, event)">&#10094;</button>
+    <img class="lightbox-img" id="lightboxImg" src="" alt="Förstoring" />
+    <button class="lightbox-nav lightbox-next" onclick="changeImage(1, event)">&#10095;</button>
+    
+    <div class="lightbox-toolbar" onclick="event.stopPropagation()">
+      <button class="btn-primary" id="lightboxSelectBtn" onclick="toggleCurrentFromLightbox()"></button>
+      <span id="lightboxFilename" style="color: #bbb; font-size: 0.9rem;"></span>
+    </div>
+  </div>
+
   <script>
-    // 1. Klistra in dina filnamn här (ersätt dessa exempelnamn)
+    // Klistra in dina filnamn här
     const images = [
-      "1.jpg",
-  "10.jpg",
-  "11.jpg",
-  "12.jpg",
-  "13.jpg",
-  "14.jpg",
-  "15.jpg",
-  "16.jpg",
-  "17.jpg",
-  "18.jpg",
-  "19.jpg",
-  "2.jpg",
-  "20.jpg",
-  "3.jpg",
-  "4.jpg",
-  "5.jpg",
-  "6.jpg",
-  "7.jpg",
-  "8.jpg",
-  "9.jpg"
+      "DSC_0001.jpg",
+      "DSC_0002.jpg"
     ];
 
-    // Byt ut mot din e-postadress
     const recipientEmail = "din.epost@exempel.se";
 
     const selected = new Set();
     const gallery = document.getElementById('gallery');
     const countEl = document.getElementById('count');
+    let currentIndex = 0;
 
-    // Rendera bildkorten
-    images.forEach(filename => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.onclick = () => {
-        if (selected.has(filename)) {
-          selected.delete(filename);
+    function renderGallery() {
+      gallery.innerHTML = '';
+      images.forEach((filename, idx) => {
+        const card = document.createElement('div');
+        card.className = `card ${selected.has(filename) ? 'selected' : ''}`;
+        card.id = `card-${idx}`;
+
+        // Klick på kortet växlar val
+        card.onclick = () => toggleSelection(filename, card);
+
+        card.innerHTML = `
+          <div class="img-wrap">
+            <div class="select-badge">${selected.has(filename) ? '✓' : ''}</div>
+            <img src="images/${encodeURIComponent(filename)}" alt="${filename}" loading="lazy">
+            <button class="zoom-btn" title="Granska helskärm">🔍 Förstora</button>
+          </div>
+          <div class="card-footer">
+            <span>${filename}</span>
+            <span style="font-size: 0.8rem; color: #666;">#${idx + 1}</span>
+          </div>
+        `;
+
+        // Förstoringsknappen öppnar lightbox utan att påverka valet
+        const zoomBtn = card.querySelector('.zoom-btn');
+        zoomBtn.onclick = (e) => {
+          e.stopPropagation();
+          openLightbox(idx);
+        };
+
+        gallery.appendChild(card);
+      });
+    }
+
+    function toggleSelection(filename, card) {
+      if (selected.has(filename)) {
+        selected.delete(filename);
+        if (card) {
           card.classList.remove('selected');
-        } else {
-          selected.add(filename);
-          card.classList.add('selected');
+          card.querySelector('.select-badge').textContent = '';
         }
-        countEl.textContent = selected.size;
-      };
+      } else {
+        selected.add(filename);
+        if (card) {
+          card.classList.add('selected');
+          card.querySelector('.select-badge').textContent = '✓';
+        }
+      }
+      countEl.textContent = selected.size;
+      updateLightboxBtn();
+    }
 
-      card.innerHTML = `
-        <div class="badge">✓</div>
-        <img src="images/${encodeURIComponent(filename)}" alt="${filename}" loading="lazy">
-        <div class="card-footer">${filename}</div>
-      `;
-      gallery.appendChild(card);
+    // Lightbox-funktioner
+    function openLightbox(index) {
+      currentIndex = index;
+      const filename = images[currentIndex];
+      const lb = document.getElementById('lightbox');
+      const lbImg = document.getElementById('lightboxImg');
+      const lbName = document.getElementById('lightboxFilename');
+
+      lbImg.src = `images/${encodeURIComponent(filename)}`;
+      lbName.textContent = filename;
+      updateLightboxBtn();
+      lb.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Förhindra scroll i bakgrunden
+    }
+
+    function closeLightbox(e) {
+      if (e && e.target !== e.currentTarget && !e.target.classList.contains('lightbox-close')) return;
+      document.getElementById('lightbox').classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+
+    function changeImage(step, e) {
+      if (e) e.stopPropagation();
+      currentIndex = (currentIndex + step + images.length) % images.length;
+      openLightbox(currentIndex);
+    }
+
+    function toggleCurrentFromLightbox() {
+      const filename = images[currentIndex];
+      const card = document.getElementById(`card-${currentIndex}`);
+      toggleSelection(filename, card);
+    }
+
+    function updateLightboxBtn() {
+      const btn = document.getElementById('lightboxSelectBtn');
+      const filename = images[currentIndex];
+      if (selected.has(filename)) {
+        btn.textContent = '✓ Vald (Klicka för att ta bort)';
+        btn.style.background = '#10b981';
+      } else {
+        btn.textContent = '+ Välj denna bild';
+        btn.style.background = '#2563eb';
+      }
+    }
+
+    // Tangentbordsnavigering i helskärm
+    window.addEventListener('keydown', (e) => {
+      const lb = document.getElementById('lightbox');
+      if (!lb.classList.contains('active')) return;
+
+      if (e.key === 'ArrowRight') changeImage(1);
+      if (e.key === 'ArrowLeft') changeImage(-1);
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === ' ') {
+        e.preventDefault();
+        toggleCurrentFromLightbox();
+      }
     });
 
+    // Inlämning
     function getPayload() {
       const name = document.getElementById('userName').value.trim() || 'En bekant';
       const list = Array.from(selected).sort().join('\n');
       return { name, count: selected.size, list };
     }
 
-    // Alternativ A: Skicka via förifyllt e-postmeddelande
     function submitEmail() {
       if (selected.size === 0) {
         alert('Välj minst en bild innan du skickar.');
@@ -247,7 +420,6 @@
       window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
     }
 
-    // Alternativ B: Kopiera till urklipp (om besökaren föredrar att skicka via SMS/chatt)
     function copySelection() {
       if (selected.size === 0) {
         alert('Välj minst en bild innan du kopierar.');
@@ -259,6 +431,8 @@
         alert('Listan har kopierats till urklipp! Du kan nu klistra in den i ett meddelande.');
       });
     }
+
+    renderGallery();
   </script>
 </body>
 </html>
