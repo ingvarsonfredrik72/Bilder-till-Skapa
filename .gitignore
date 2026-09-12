@@ -1,0 +1,25 @@
+# Operativsystem-specifika metadatafiler
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Editorer och utvecklingsmiljöer
+.vscode/
+.idea/
+
+# Säkerhetsspärr: råfiler och backupfiler om de råkar ligga lokalt
+*.raw
+*.nef
+*.cr2
+*.cr3
+*.arw
+*.dng
+*.psd
+*.tif
+*.tiff
+*.zip
+
+# Loggar och temporära filer
+*.log
+*.tmp
