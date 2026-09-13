@@ -76,8 +76,12 @@
       outline: none;
       border-color: #3b82f6;
     }
+    input[type="text"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
     button {
-      padding: 8px 16px;
+      padding: 8px 18px;
       border-radius: 6px;
       border: none;
       font-weight: 600;
@@ -87,8 +91,6 @@
     }
     .btn-primary { background: #2563eb; color: white; }
     .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
-    .btn-secondary { background: #374151; color: #f3f4f6; }
-    .btn-secondary:hover:not(:disabled) { background: #4b5563; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     
     .btn-reset {
@@ -278,8 +280,6 @@
     <div class="actions">
       <input type="text" id="userName" placeholder="Ditt namn..." />
       <button class="btn-primary" id="submitBtn" onclick="submitToSheets()">Skicka urval</button>
-      <button class="btn-secondary" onclick="submitEmail()">Skicka via e-post</button>
-      <button class="btn-secondary" onclick="copySelection()">Kopiera lista</button>
     </div>
   </div>
 
@@ -303,14 +303,10 @@
     // INSTÄLLNINGAR (KONFIGURATION)
     // =========================================================================
 
-    // ÄNDRA HÄR: Klistra in adressen från urklipp här emellan citationstecknen
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPmiBFj0RvWgxTO8buXTWlEpYygIgNyuVRBsBH-kKcSFP87Qqf3TVPOOnH-Np1pImI/exec";
 
     // Max antal bilder som får väljas
     const MAX_SELECTIONS = 10; 
-
-    // Din mottagaradress för e-post
-    const recipientEmail = "fredrik.ingvarson@outlook.com";
 
     // Bildfiler
     const images = [
@@ -346,6 +342,7 @@
     const resetBtn = document.getElementById('resetBtn');
     const subtitleText = document.getElementById('subtitleText');
     let currentIndex = 0;
+    let isSubmitted = false;
 
     subtitleText.textContent = `Välj upp till max ${MAX_SELECTIONS} bilder du gillar bäst. Klicka på 🔍 Förstora för helskärm.`;
 
@@ -356,7 +353,9 @@
         card.className = `card ${selected.has(filename) ? 'selected' : ''}`;
         card.id = `card-${idx}`;
 
-        card.onclick = () => toggleSelection(filename, card);
+        card.onclick = () => {
+          if (!isSubmitted) toggleSelection(filename, card);
+        };
 
         card.innerHTML = `
           <div class="img-wrap">
@@ -381,6 +380,8 @@
     }
 
     function toggleSelection(filename, card) {
+      if (isSubmitted) return;
+
       if (selected.has(filename)) {
         selected.delete(filename);
         if (card) {
@@ -403,7 +404,7 @@
     }
 
     function clearAllSelections() {
-      if (selected.size === 0) return;
+      if (selected.size === 0 || isSubmitted) return;
       selected.clear();
       document.querySelectorAll('.card.selected').forEach(card => {
         card.classList.remove('selected');
@@ -415,7 +416,7 @@
 
     function updateUIState() {
       countEl.textContent = selected.size;
-      resetBtn.disabled = selected.size === 0;
+      resetBtn.disabled = selected.size === 0 || isSubmitted;
       updateLightboxBtn();
     }
 
@@ -447,6 +448,7 @@
     }
 
     function toggleCurrentFromLightbox() {
+      if (isSubmitted) return;
       const filename = images[currentIndex];
       const card = document.getElementById(`card-${currentIndex}`);
       toggleSelection(filename, card);
@@ -455,6 +457,13 @@
     function updateLightboxBtn() {
       const btn = document.getElementById('lightboxSelectBtn');
       const filename = images[currentIndex];
+      if (isSubmitted) {
+        btn.disabled = true;
+        btn.textContent = selected.has(filename) ? '✓ Vald' : 'Ej vald';
+        btn.style.background = '#444';
+        return;
+      }
+
       if (selected.has(filename)) {
         btn.textContent = '✓ Vald (Klicka för att ta bort)';
         btn.style.background = '#10b981';
@@ -477,13 +486,7 @@
       }
     });
 
-    function getPayload() {
-      const name = document.getElementById('userName').value.trim() || 'En bekant';
-      const list = Array.from(selected).sort().join(', ');
-      return { name, count: selected.size, list };
-    }
-
-    // 1. Skicka till Google Kalkylark
+    // Skicka till Google Kalkylark
     async function submitToSheets() {
       const nameInput = document.getElementById('userName');
       const name = nameInput.value.trim();
@@ -499,7 +502,17 @@
         return;
       }
 
-      const data = getPayload();
+      // Sortera filnamnen numeriskt/alfabetiskt så de skrivs ut i ordning
+      const sortedImages = Array.from(selected).sort((a, b) => 
+        a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+      );
+
+      const payload = {
+        name: name,
+        count: selected.size,
+        images: sortedImages
+      };
+
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Skickar...';
@@ -509,43 +522,24 @@
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(payload)
         });
 
-        alert('Tack! Ditt urval har skickats och sparats i listan.');
+        // Lås sidan efter lyckad inskickning
+        isSubmitted = true;
+        nameInput.disabled = true;
+        resetBtn.disabled = true;
         submitBtn.textContent = 'Skickat ✓';
+        submitBtn.style.background = '#10b981';
+        updateLightboxBtn();
+
+        alert('Tack! Ditt urval har skickats och sparats i listan.');
       } catch (error) {
         console.error('Fel vid inskickning:', error);
-        alert('Något gick fel vid överföringen. Prova att använda e-postknappen eller kopiera listan.');
+        alert('Något gick fel vid överföringen. Prova igen.');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Skicka urval';
       }
-    }
-
-    // 2. Skicka via E-post
-    function submitEmail() {
-      if (selected.size === 0) {
-        alert('Välj minst en bild innan du skickar.');
-        return;
-      }
-      const data = getPayload();
-      const listFormatted = Array.from(selected).sort().join('\n');
-      const subject = encodeURIComponent(`Fotourval från ${data.name}`);
-      const body = encodeURIComponent(`Hej!\n\nHär är mina favoritbilder (${data.count} st):\n\n${listFormatted}\n`);
-      window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
-    }
-
-    // 3. Kopiera lista
-    function copySelection() {
-      if (selected.size === 0) {
-        alert('Välj minst en bild innan du kopierar.');
-        return;
-      }
-      const data = getPayload();
-      const text = `Fotourval från ${data.name} (${data.count} st):\n${Array.from(selected).sort().join('\n')}`;
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Listan har kopierats till urklipp! Du kan nu klistra in den i ett meddelande.');
-      });
     }
 
     renderGallery();
