@@ -86,11 +86,11 @@
       transition: background 0.15s ease, opacity 0.15s ease;
     }
     .btn-primary { background: #2563eb; color: white; }
-    .btn-primary:hover { background: #1d4ed8; }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
     .btn-secondary { background: #374151; color: #f3f4f6; }
-    .btn-secondary:hover { background: #4b5563; }
+    .btn-secondary:hover:not(:disabled) { background: #4b5563; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
     
-    /* Stil för Avvälj alla-knappen */
     .btn-reset {
       background: #2b2b2b;
       border: 1px solid #444;
@@ -103,12 +103,8 @@
       border-color: #dc2626;
       color: #fca5a5;
     }
-    .btn-reset:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
 
-    /* Galleri: bredare grid */
+    /* Galleri */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -157,7 +153,6 @@
       display: block;
     }
 
-    /* Valmarkör */
     .select-badge {
       position: absolute;
       top: 12px;
@@ -180,7 +175,6 @@
       border-color: #3b82f6;
     }
 
-    /* Förstoringsknapp */
     .zoom-btn {
       position: absolute;
       bottom: 12px;
@@ -283,8 +277,9 @@
     </div>
     <div class="actions">
       <input type="text" id="userName" placeholder="Ditt namn..." />
-      <button class="btn-secondary" onclick="copySelection()">Kopiera din lista med val till urklipp</button>
-      <button class="btn-primary" onclick="submitEmail()">Skicka din lista med val via e-post</button>
+      <button class="btn-primary" id="submitBtn" onclick="submitToSheets()">Skicka urval</button>
+      <button class="btn-secondary" onclick="submitEmail()">Skicka via e-post</button>
+      <button class="btn-secondary" onclick="copySelection()">Kopiera lista</button>
     </div>
   </div>
 
@@ -308,10 +303,13 @@
     // INSTÄLLNINGAR (KONFIGURATION)
     // =========================================================================
 
-    // ÄNDRA HÄR: Sätt det maximala antalet bilder som får väljas (Y)
+    // ÄNDRA HÄR: Klistra in adressen från urklipp här emellan citationstecknen
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPmiBFj0RvWgxTO8buXTWlEpYygIgNyuVRBsBH-kKcSFP87Qqf3TVPOOnH-Np1pImI/exec";
+
+    // Max antal bilder som får väljas
     const MAX_SELECTIONS = 10; 
 
-    // Byt ut mot din mottagaradress för urvalen
+    // Din mottagaradress för e-post
     const recipientEmail = "fredrik.ingvarson@outlook.com";
 
     // Bildfiler
@@ -345,13 +343,10 @@
     const selected = new Set();
     const gallery = document.getElementById('gallery');
     const countEl = document.getElementById('count');
-    const maxLabel = document.getElementById('maxLabel');
     const resetBtn = document.getElementById('resetBtn');
     const subtitleText = document.getElementById('subtitleText');
     let currentIndex = 0;
 
-    // Initiera texter med maxgränsen
-    //maxLabel.textContent = MAX_SELECTIONS;
     subtitleText.textContent = `Välj upp till max ${MAX_SELECTIONS} bilder du gillar bäst. Klicka på 🔍 Förstora för helskärm.`;
 
     function renderGallery() {
@@ -387,14 +382,12 @@
 
     function toggleSelection(filename, card) {
       if (selected.has(filename)) {
-        // Alltid tillåtet att välja bort
         selected.delete(filename);
         if (card) {
           card.classList.remove('selected');
           card.querySelector('.select-badge').textContent = '';
         }
       } else {
-        // Kontrollera om maxgränsen redan är nådd
         if (selected.size >= MAX_SELECTIONS) {
           alert(`Du har redan valt maximalt antal bilder (${MAX_SELECTIONS} st). Avmarkera en bild först om du vill välja denna istället.`);
           return;
@@ -409,17 +402,14 @@
       updateUIState();
     }
 
-    // Funktion för att avvälja alla bilder
     function clearAllSelections() {
       if (selected.size === 0) return;
-      
       selected.clear();
       document.querySelectorAll('.card.selected').forEach(card => {
         card.classList.remove('selected');
         const badge = card.querySelector('.select-badge');
         if (badge) badge.textContent = '';
       });
-
       updateUIState();
     }
 
@@ -474,7 +464,6 @@
       }
     }
 
-    // Tangentbord
     window.addEventListener('keydown', (e) => {
       const lb = document.getElementById('lightbox');
       if (!lb.classList.contains('active')) return;
@@ -488,31 +477,72 @@
       }
     });
 
-    // Inlämning
     function getPayload() {
       const name = document.getElementById('userName').value.trim() || 'En bekant';
-      const list = Array.from(selected).sort().join('\n');
+      const list = Array.from(selected).sort().join(', ');
       return { name, count: selected.size, list };
     }
 
+    // 1. Skicka till Google Kalkylark
+    async function submitToSheets() {
+      const nameInput = document.getElementById('userName');
+      const name = nameInput.value.trim();
+
+      if (!name) {
+        alert('Vänligen fyll i ditt namn innan du skickar.');
+        nameInput.focus();
+        return;
+      }
+
+      if (selected.size === 0) {
+        alert('Välj minst en bild innan du skickar.');
+        return;
+      }
+
+      const data = getPayload();
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Skickar...';
+
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(data)
+        });
+
+        alert('Tack! Ditt urval har skickats och sparats i listan.');
+        submitBtn.textContent = 'Skickat ✓';
+      } catch (error) {
+        console.error('Fel vid inskickning:', error);
+        alert('Något gick fel vid överföringen. Prova att använda e-postknappen eller kopiera listan.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Skicka urval';
+      }
+    }
+
+    // 2. Skicka via E-post
     function submitEmail() {
       if (selected.size === 0) {
         alert('Välj minst en bild innan du skickar.');
         return;
       }
       const data = getPayload();
+      const listFormatted = Array.from(selected).sort().join('\n');
       const subject = encodeURIComponent(`Fotourval från ${data.name}`);
-      const body = encodeURIComponent(`Hej!\n\nHär är mina favoritbilder (${data.count} st):\n\n${data.list}\n`);
+      const body = encodeURIComponent(`Hej!\n\nHär är mina favoritbilder (${data.count} st):\n\n${listFormatted}\n`);
       window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
     }
 
+    // 3. Kopiera lista
     function copySelection() {
       if (selected.size === 0) {
         alert('Välj minst en bild innan du kopierar.');
         return;
       }
       const data = getPayload();
-      const text = `Fotourval från ${data.name} (${data.count} st):\n${data.list}`;
+      const text = `Fotourval från ${data.name} (${data.count} st):\n${Array.from(selected).sort().join('\n')}`;
       navigator.clipboard.writeText(text).then(() => {
         alert('Listan har kopierats till urklipp! Du kan nu klistra in den i ett meddelande.');
       });
