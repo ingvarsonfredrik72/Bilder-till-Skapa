@@ -46,6 +46,11 @@
       margin: 0 auto 24px auto;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
+    .status-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
     .status {
       font-size: 1rem;
     }
@@ -78,12 +83,30 @@
       font-weight: 600;
       cursor: pointer;
       font-size: 0.9rem;
-      transition: background 0.15s ease;
+      transition: background 0.15s ease, opacity 0.15s ease;
     }
     .btn-primary { background: #2563eb; color: white; }
     .btn-primary:hover { background: #1d4ed8; }
     .btn-secondary { background: #374151; color: #f3f4f6; }
     .btn-secondary:hover { background: #4b5563; }
+    
+    /* Stil för Avvälj alla-knappen */
+    .btn-reset {
+      background: #2b2b2b;
+      border: 1px solid #444;
+      color: #bbb;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+    .btn-reset:hover:not(:disabled) {
+      background: #3a1d1d;
+      border-color: #dc2626;
+      color: #fca5a5;
+    }
+    .btn-reset:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
 
     /* Galleri: bredare grid */
     .grid {
@@ -254,7 +277,10 @@
   </header>
 
   <div class="toolbar">
-    <div class="status">Valda bilder: <span class="count" id="count">0</span> / <span id="maxLabel">10</span></div>
+    <div class="status-area">
+      <div class="status">Valda bilder: <span class="count" id="count">0</span> / <span id="maxLabel">10</span></div>
+      <button class="btn-reset" id="resetBtn" onclick="clearAllSelections()" disabled title="Rensa alla gjorda val">Avvälj alla</button>
+    </div>
     <div class="actions">
       <input type="text" id="userName" placeholder="Ditt namn..." />
       <button class="btn-secondary" onclick="copySelection()">Kopiera din lista med val till urklipp</button>
@@ -290,27 +316,26 @@
 
     // Bildfiler
     const images = [
-    "1.jpg",
-  "10.jpg",
-  "11.jpg",
-  "12.jpg",
-  "13.jpg",
-  "14.jpg",
-  "15.jpg",
-  "16.jpg",
-  "17.jpg",
-  "18.jpg",
-  "19.jpg",
-  "2.jpg",
-  "20.jpg",
-  "3.jpg",
-  "4.jpg",
-  "5.jpg",
-  "6.jpg",
-  "7.jpg",
-  "8.jpg",
-  "9.jpg"
-      
+      "1.jpg",
+      "10.jpg",
+      "11.jpg",
+      "12.jpg",
+      "13.jpg",
+      "14.jpg",
+      "15.jpg",
+      "16.jpg",
+      "17.jpg",
+      "18.jpg",
+      "19.jpg",
+      "2.jpg",
+      "20.jpg",
+      "3.jpg",
+      "4.jpg",
+      "5.jpg",
+      "6.jpg",
+      "7.jpg",
+      "8.jpg",
+      "9.jpg"
     ];
 
     // =========================================================================
@@ -321,6 +346,7 @@
     const gallery = document.getElementById('gallery');
     const countEl = document.getElementById('count');
     const maxLabel = document.getElementById('maxLabel');
+    const resetBtn = document.getElementById('resetBtn');
     const subtitleText = document.getElementById('subtitleText');
     let currentIndex = 0;
 
@@ -380,7 +406,26 @@
           card.querySelector('.select-badge').textContent = '✓';
         }
       }
+      updateUIState();
+    }
+
+    // Funktion för att avvälja alla bilder
+    function clearAllSelections() {
+      if (selected.size === 0) return;
+      
+      selected.clear();
+      document.querySelectorAll('.card.selected').forEach(card => {
+        card.classList.remove('selected');
+        const badge = card.querySelector('.select-badge');
+        if (badge) badge.textContent = '';
+      });
+
+      updateUIState();
+    }
+
+    function updateUIState() {
       countEl.textContent = selected.size;
+      resetBtn.disabled = selected.size === 0;
       updateLightboxBtn();
     }
 
