@@ -128,6 +128,7 @@
       cursor: pointer;
       border: 3px solid transparent;
       user-select: none;
+      -webkit-user-select: none;
       display: flex;
       flex-direction: column;
       transition: border-color 0.15s ease, transform 0.15s ease;
@@ -153,6 +154,9 @@
       max-height: 420px;
       object-fit: contain;
       display: block;
+      pointer-events: none; /* Blockera dra-och-släpp-konflikter */
+      -webkit-user-drag: none;
+      user-select: none;
     }
 
     .select-badge {
@@ -170,6 +174,7 @@
       justify-content: center;
       font-size: 16px;
       font-weight: bold;
+      pointer-events: none;
       transition: all 0.15s ease;
     }
     .card.selected .select-badge {
@@ -206,6 +211,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      pointer-events: none;
     }
 
     /* Lightbox */
@@ -229,6 +235,8 @@
       object-fit: contain;
       border-radius: 6px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      user-select: none;
+      -webkit-user-drag: none;
     }
     .lightbox-toolbar {
       margin-top: 16px;
@@ -299,16 +307,9 @@
   </div>
 
   <script>
-    // =========================================================================
-    // INSTÄLLNINGAR (KONFIGURATION)
-    // =========================================================================
-
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPmiBFj0RvWgxTO8buXTWlEpYygIgNyuVRBsBH-kKcSFP87Qqf3TVPOOnH-Np1pImI/exec";
-
-    // Max antal bilder som får väljas
     const MAX_SELECTIONS = 10; 
 
-    // Bildfiler
     const images = [
       "1.jpg",
       "10.jpg",
@@ -332,10 +333,6 @@
       "9.jpg"
     ];
 
-    // =========================================================================
-    // GALLERIKOD
-    // =========================================================================
-
     const selected = new Set();
     const gallery = document.getElementById('gallery');
     const countEl = document.getElementById('count');
@@ -353,14 +350,14 @@
         card.className = `card ${selected.has(filename) ? 'selected' : ''}`;
         card.id = `card-${idx}`;
 
-        card.onclick = () => {
+        card.onclick = (e) => {
           if (!isSubmitted) toggleSelection(filename, card);
         };
 
         card.innerHTML = `
           <div class="img-wrap">
             <div class="select-badge">${selected.has(filename) ? '✓' : ''}</div>
-            <img src="images/${encodeURIComponent(filename)}" alt="${filename}" loading="lazy">
+            <img src="images/${encodeURIComponent(filename)}" alt="${filename}" loading="lazy" draggable="false">
             <button class="zoom-btn" title="Granska helskärm">🔍 Förstora</button>
           </div>
           <div class="card-footer">
@@ -486,7 +483,6 @@
       }
     });
 
-    // Skicka till Google Kalkylark
     async function submitToSheets() {
       const nameInput = document.getElementById('userName');
       const name = nameInput.value.trim();
@@ -502,7 +498,6 @@
         return;
       }
 
-      // Sortera filnamnen numeriskt/alfabetiskt så de skrivs ut i ordning
       const sortedImages = Array.from(selected).sort((a, b) => 
         a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
       );
@@ -525,7 +520,6 @@
           body: JSON.stringify(payload)
         });
 
-        // Lås sidan efter lyckad inskickning
         isSubmitted = true;
         nameInput.disabled = true;
         resetBtn.disabled = true;
