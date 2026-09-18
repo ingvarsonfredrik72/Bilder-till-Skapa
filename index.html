@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Välj dina favoritbilder</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 16px 24px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 1.6rem;
+    }
+    p.subtitle {
+      margin: 0;
+      color: #888;
+      font-size: 0.95rem;
+    }
+
+    /* Flytande verktygsrad */
+    .toolbar {
+      position: sticky;
+      top: 12px;
+      z-index: 100;
+      background: rgba(30, 30, 30, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      max-width: 1600px;
+      margin: 0 auto 24px auto;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .status-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .status {
+      font-size: 1rem;
+    }
+    .count {
+      color: #3b82f6;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    input[type="text"] {
+      background: #242424;
+      border: 1px solid #444;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+    input[type="text"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    button {
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .btn-reset {
+      background: #2b2b2b;
+      border: 1px solid #444;
+      color: #bbb;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+    .btn-reset:hover:not(:disabled) {
+      background: #3a1d1d;
+      border-color: #dc2626;
+      color: #fca5a5;
+    }
+
+    /* Galleri */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 20px;
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      position: relative;
+      background: #1a1a1a;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 3px solid transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+    }
+    .card.selected {
+      border-color: #3b82f6;
+    }
+
+    .img-wrap {
+      position: relative;
+      background: #0f0f0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
+    }
+    .card img {
+      width: 100%;
+      height: auto;
+      max-height: 420px;
+      object-fit: contain;
+      display: block;
+      pointer-events: none; /* Blockera dra-och-släpp-konflikter */
+      -webkit-user-drag: none;
+      user-select: none;
+    }
+
+    .select-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid #666;
+      color: white;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      pointer-events: none;
+      transition: all 0.15s ease;
+    }
+    .card.selected .select-badge {
+      background: #3b82f6;
+      border-color: #3b82f6;
+    }
+
+    .zoom-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .zoom-btn:hover {
+      background: rgba(0, 0, 0, 0.95);
+      border-color: #fff;
+    }
+
+    .card-footer {
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #999;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .lightbox.active {
+      display: flex;
+    }
+    .lightbox-img {
+      max-width: 90vw;
+      max-height: 82vh;
+      object-fit: contain;
+      border-radius: 6px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .lightbox-toolbar {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: none;
+      font-size: 2rem;
+      padding: 12px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .lightbox-nav:hover { background: rgba(255,255,255,0.3); }
+    .lightbox-prev { left: 20px; }
+    .lightbox-next { right: 20px; }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      font-size: 2rem;
+      color: #aaa;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+    .lightbox-close:hover { color: #fff; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Välj dina favoriter</h1>
+    <p class="subtitle" id="subtitleText">Klicka på bilderna du gillar bäst och skicka in ditt urval.</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="status-area">
+      <div class="status">Valda bilder: <span class="count" id="count">0</span> st</div>
+      <button class="btn-reset" id="resetBtn" onclick="clearAllSelections()" disabled title="Rensa alla gjorda val">Avvälj alla</button>
+    </div>
+    <div class="actions">
+      <input type="text" id="userName" placeholder="Ditt namn..." />
+      <button class="btn-primary" id="submitBtn" onclick="submitToSheets()">Skicka urval</button>
+    </div>
+  </div>
+
+  <div class="grid" id="gallery"></div>
+
+  <!-- Lightbox modal -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <button class="lightbox-nav lightbox-prev" onclick="changeImage(-1, event)">&#10094;</button>
+    <img class="lightbox-img" id="lightboxImg" src="" alt="Förstoring" />
+    <button class="lightbox-nav lightbox-next" onclick="changeImage(1, event)">&#10095;</button>
+    
+    <div class="lightbox-toolbar" onclick="event.stopPropagation()">
+      <button class="btn-primary" id="lightboxSelectBtn" onclick="toggleCurrentFromLightbox()"></button>
+      <span id="lightboxFilename" style="color: #bbb; font-size: 0.9rem;"></span>
+    </div>
+  </div>
+
+  <script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPmiBFj0RvWgxTO8buXTWlEpYygIgNyuVRBsBH-kKcSFP87Qqf3TVPOOnH-Np1pImI/exec";
+    const MAX_SELECTIONS = 10; 
+
+    const images = [
+      "1.jpg",
+      "10.jpg",
+      "11.jpg",
+      "12.jpg",
+      "13.jpg",
+      "14.jpg",
+      "15.jpg",
+      "16.jpg",
+      "17.jpg",
+      "18.jpg",
+      "19.jpg",
+      "2.jpg",
+      "20.jpg",
+      "3.jpg",
+      "4.jpg",
+      "5.jpg",
+      "6.jpg",
+      "7.jpg",
+      "8.jpg",
+      "9.jpg"
+    ];
+
+    const selected = new Set();
+    const gallery = document.getElementById('gallery');
+    const countEl = document.getElementById('count');
+    const resetBtn = document.getElementById('resetBtn');
+    const subtitleText = document.getElementById('subtitleText');
+    let currentIndex = 0;
+    let isSubmitted = false;
+
+    subtitleText.textContent = `Välj upp till max ${MAX_SELECTIONS} bilder du gillar bäst. Klicka på 🔍 för att förstora.`;
+
+    function renderGallery() {
+      gallery.innerHTML = '';
+      images.forEach((filename, idx) => {
+        const card = document.createElement('div');
+        card.className = `card ${selected.has(filename) ? 'selected' : ''}`;
+        card.id = `card-${idx}`;
+
+        card.onclick = (e) => {
+          if (!isSubmitted) toggleSelection(filename, card);
+        };
+
+        card.innerHTML = `
+          <div class="img-wrap">
+            <div class="select-badge">${selected.has(filename) ? '✓' : ''}</div>
+            <img src="images/${encodeURIComponent(filename)}" alt="${filename}" loading="lazy" draggable="false">
+            <button class="zoom-btn" title="Granska helskärm">🔍 Förstora</button>
+          </div>
+          <div class="card-footer">
+            <span>${filename}</span>
+            <span style="font-size: 0.8rem; color: #666;">#${idx + 1}</span>
+          </div>
+        `;
+
+        const zoomBtn = card.querySelector('.zoom-btn');
+        zoomBtn.onclick = (e) => {
+          e.stopPropagation();
+          openLightbox(idx);
+        };
+
+        gallery.appendChild(card);
+      });
+    }
+
+    function toggleSelection(filename, card) {
+      if (isSubmitted) return;
+
+      if (selected.has(filename)) {
+        selected.delete(filename);
+        if (card) {
+          card.classList.remove('selected');
+          card.querySelector('.select-badge').textContent = '';
+        }
+      } else {
+        if (selected.size >= MAX_SELECTIONS) {
+          alert(`Du har redan valt maximalt antal bilder (${MAX_SELECTIONS} st). Avmarkera en bild först om du vill välja denna istället.`);
+          return;
+        }
+
+        selected.add(filename);
+        if (card) {
+          card.classList.add('selected');
+          card.querySelector('.select-badge').textContent = '✓';
+        }
+      }
+      updateUIState();
+    }
+
+    function clearAllSelections() {
+      if (selected.size === 0 || isSubmitted) return;
+      selected.clear();
+      document.querySelectorAll('.card.selected').forEach(card => {
+        card.classList.remove('selected');
+        const badge = card.querySelector('.select-badge');
+        if (badge) badge.textContent = '';
+      });
+      updateUIState();
+    }
+
+    function updateUIState() {
+      countEl.textContent = selected.size;
+      resetBtn.disabled = selected.size === 0 || isSubmitted;
+      updateLightboxBtn();
+    }
+
+    // Lightbox
+    function openLightbox(index) {
+      currentIndex = index;
+      const filename = images[currentIndex];
+      const lb = document.getElementById('lightbox');
+      const lbImg = document.getElementById('lightboxImg');
+      const lbName = document.getElementById('lightboxFilename');
+
+      lbImg.src = `images/${encodeURIComponent(filename)}`;
+      lbName.textContent = filename;
+      updateLightboxBtn();
+      lb.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox(e) {
+      if (e && e.target !== e.currentTarget && !e.target.classList.contains('lightbox-close')) return;
+      document.getElementById('lightbox').classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+
+    function changeImage(step, e) {
+      if (e) e.stopPropagation();
+      currentIndex = (currentIndex + step + images.length) % images.length;
+      openLightbox(currentIndex);
+    }
+
+    function toggleCurrentFromLightbox() {
+      if (isSubmitted) return;
+      const filename = images[currentIndex];
+      const card = document.getElementById(`card-${currentIndex}`);
+      toggleSelection(filename, card);
+    }
+
+    function updateLightboxBtn() {
+      const btn = document.getElementById('lightboxSelectBtn');
+      const filename = images[currentIndex];
+      if (isSubmitted) {
+        btn.disabled = true;
+        btn.textContent = selected.has(filename) ? '✓ Vald' : 'Ej vald';
+        btn.style.background = '#444';
+        return;
+      }
+
+      if (selected.has(filename)) {
+        btn.textContent = '✓ Vald (Klicka för att ta bort)';
+        btn.style.background = '#10b981';
+      } else {
+        btn.textContent = '+ Välj denna bild';
+        btn.style.background = '#2563eb';
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const lb = document.getElementById('lightbox');
+      if (!lb.classList.contains('active')) return;
+
+      if (e.key === 'ArrowRight') changeImage(1);
+      if (e.key === 'ArrowLeft') changeImage(-1);
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === ' ') {
+        e.preventDefault();
+        toggleCurrentFromLightbox();
+      }
+    });
+
+    async function submitToSheets() {
+      const nameInput = document.getElementById('userName');
+      const name = nameInput.value.trim();
+
+      if (!name) {
+        alert('Vänligen fyll i ditt namn innan du skickar.');
+        nameInput.focus();
+        return;
+      }
+
+      if (selected.size === 0) {
+        alert('Välj minst en bild innan du skickar.');
+        return;
+      }
+
+      const sortedImages = Array.from(selected).sort((a, b) => 
+        a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+      );
+
+      const payload = {
+        name: name,
+        count: selected.size,
+        images: sortedImages
+      };
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Skickar...';
+
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+
+        isSubmitted = true;
+        nameInput.disabled = true;
+        resetBtn.disabled = true;
+        submitBtn.textContent = 'Skickat ✓';
+        submitBtn.style.background = '#10b981';
+        updateLightboxBtn();
+
+        alert('Tack! Ditt urval har skickats och sparats i listan.');
+      } catch (error) {
+        console.error('Fel vid inskickning:', error);
+        alert('Något gick fel vid överföringen. Prova igen.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Skicka urval';
+      }
+    }
+
+    renderGallery();
+  </script>
+</body>
+</html>
